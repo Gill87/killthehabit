@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "754087238510",
+    "project_id": "killthehabit",
+    "storage_bucket": "killthehabit.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:754087238510:android:071651a128e04626d0ff7f",
+        "android_client_info": {
+          "package_name": "com.killthehabit.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB9IBxWVUmJN-7aM2GQOPoCaafG1kDXDlM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
