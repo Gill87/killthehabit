@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:rehabit/auth/presentation/cubits/auth_cubit.dart';
+import 'package:rehabit/auth/presentation/pages/forgot_password_page.dart';
 import 'package:rehabit/components/large_text_field.dart';
 
 class LoginPage extends StatefulWidget {
@@ -100,7 +101,13 @@ class _LoginPageState extends State<LoginPage> {
                     ),
 
                     TextButton(
-                      onPressed: ()=>{},
+                      onPressed: ()=>{
+                        Navigator.push(context, 
+                          MaterialPageRoute(
+                            builder: (context) => const ForgotPasswordPage(),
+                          )
+                        )
+                      },
                       child: Text(
                         "Forgot Password?",
                         style: GoogleFonts.ubuntu(
@@ -108,9 +115,35 @@ class _LoginPageState extends State<LoginPage> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                    )
+                    ),
                   ],
                 ),
+
+                const SizedBox(height: 20),
+
+                ElevatedButton.icon(
+                  onPressed: () {
+                    // Call the loginWithGoogle method from AuthCubit
+                    final authCubit = context.read<AuthCubit>();
+                    authCubit.loginWithGoogle();
+                  },
+                  icon:  Image.asset('assets/images/google_logo.png', width: 30, height: 30, color: Colors.white),
+                  label: Text(
+                    "Sign in with Google",
+                    style: GoogleFonts.ubuntu(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(200, 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                  ),
+                ),
+
+
               ],
             ),
           ),

@@ -1,3 +1,4 @@
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:rehabit/auth/domain/entities/app_user.dart';
 import 'package:rehabit/auth/domain/repos/auth_repo.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -11,7 +12,6 @@ class FirebaseAuthRepo implements AuthRepo {
   @override
   Future<AppUser?> loginWithEmailAndPassword(String email, String password) async {
     try {
-
       // Sign in with email and password
       UserCredential userCredential = await firebaseAuth.signInWithEmailAndPassword(email: email, password: password);
 
@@ -93,11 +93,25 @@ class FirebaseAuthRepo implements AuthRepo {
       name: userDoc['name'],
     );
   }
+
+  @override
+  Future signInWithGoogle() async {
+
+    final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+
+    final GoogleSignInAuthentication? googleAuth = await googleUser?.authentication;
+
+    final credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth?.accessToken,
+      idToken: googleAuth?.idToken,
+    );
+
+    return await firebaseAuth.signInWithCredential(credential);
+  }
   
   @override
-  Future<bool> isSignedIn() {
-    // TODO: implement isSignedIn
-    throw UnimplementedError();
+  bool isSignedIn() {
+    return (firebaseAuth.currentUser != null);
   }
 
 }

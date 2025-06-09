@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:rehabit/auth/presentation/cubits/auth_cubit.dart';
 
 class HomePage extends StatelessWidget {
@@ -17,8 +18,13 @@ class HomePage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Center(child: Text('Kill the Habit')),
+        title: Text(
+          'Kill the Habit',
+          style: GoogleFonts.ubuntu(fontSize: 24),
+        ),
 
+        centerTitle: true,
+        
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),

@@ -47,9 +47,29 @@ class AuthCubit extends Cubit<AuthState>{
 
   Future<void> login(String email, String password) async {
     emit(AuthLoading());
-
+    print("Current state before login: $state");
+    
     try {
       _currentUser = await authRepo.loginWithEmailAndPassword(email, password);
+      if (_currentUser != null) {
+        emit(Authenticated(_currentUser!));
+      } else {
+        emit(Unauthenticated());
+      }
+    } catch (e) {
+      emit(AuthError(e.toString()));
+      print("Current state after login: $state");
+    }
+
+    print("Current state after after login: $state");
+
+  }
+
+  Future <void> loginWithGoogle() async {
+    emit(AuthLoading());
+  
+    try {
+      _currentUser = await authRepo.signInWithGoogle();
       if (_currentUser != null) {
         emit(Authenticated(_currentUser!));
       } else {
@@ -71,5 +91,6 @@ class AuthCubit extends Cubit<AuthState>{
       emit(AuthError(e.toString()));
     }
   }
+
   
 }

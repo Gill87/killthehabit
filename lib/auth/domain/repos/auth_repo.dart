@@ -7,7 +7,9 @@ abstract class AuthRepo {
 
   Future<void> signOut();
 
-  Future<bool> isSignedIn();
+  bool isSignedIn();
 
   Future<AppUser?> getCurrentUser();
+
+  Future signInWithGoogle();
 }

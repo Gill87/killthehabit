@@ -87,7 +87,41 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
 
+                const SizedBox(height: 20),
+
+                Text(
+                  "Or",
+                  style: GoogleFonts.ubuntu(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
                 const SizedBox(height: 10),
+
+                ElevatedButton.icon(
+                  onPressed: () {
+                    // Call the loginWithGoogle method from AuthCubit
+                    final authCubit = context.read<AuthCubit>();
+                    authCubit.loginWithGoogle();
+                  },
+                  icon:  Image.asset('assets/images/google_logo.png', width: 30, height: 30, color: Colors.white),
+                  label: Text(
+                    "Sign in with Google",
+                    style: GoogleFonts.ubuntu(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(200, 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
 
                 TextButton(
                   onPressed: widget.togglePage, 

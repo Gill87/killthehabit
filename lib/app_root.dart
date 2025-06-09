@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rehabit/auth/presentation/cubits/auth_cubit.dart';
 import 'package:rehabit/auth/presentation/cubits/auth_state.dart';
 import 'package:rehabit/auth/presentation/pages/auth_page.dart';
+import 'package:rehabit/components/loading_screen.dart';
 import 'package:rehabit/home_page.dart';
 
 class AppRoot extends StatefulWidget {
@@ -42,14 +43,16 @@ class _AppRootState extends State<AppRoot> {
         } else if (state is Unauthenticated) {
           print("Current state: $state");
           return const AuthPage();
-        } 
-        else {
+        } else {
           print("Current state: $state");
-          return const Center(child: CircularProgressIndicator());
+          return const LoadingScreen();
         } 
       }, 
       listener: (context, state){
         if(state is AuthError){
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const AuthPage()));
+          
+          // Show an error message using a SnackBar
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.message)),
           );
