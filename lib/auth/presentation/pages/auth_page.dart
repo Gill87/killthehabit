@@ -24,32 +24,32 @@ class _AuthPageState extends State<AuthPage> {
   }
   @override
   Widget build(BuildContext context) {
-    return BlocListener<AuthCubit, AuthState>(
+    return BlocConsumer<AuthCubit, AuthState>(
       listener: (context, state) {
         if (state is Authenticated) {
-          Navigator.push(context, MaterialPageRoute(
+          Navigator.pushReplacement(context, MaterialPageRoute(
             builder: (context) => const HomePage(),
           ));
         } else if (state is Unauthenticated) {
-          Navigator.push(context, MaterialPageRoute(
+          Navigator.pushReplacement(context, MaterialPageRoute(
             builder: (context) => const AuthPage(),
           ));
         } else if (state is AuthError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text("Authentication error: ${state.message}")),
             );
-        } else {
-            // Handle other states if necessary
-            Navigator.push((context), MaterialPageRoute(
-              builder: (context) => const LoadingScreen(),
-            ));
-        }
+        } 
       },
-      
 
-      child: showLoginPage
-          ? LoginPage(togglePage: togglePage)
-          : RegisterPage(togglePage: togglePage),
+      builder: (context, state) {
+        if (state is AuthLoading) {
+          return const LoadingScreen();
+        }
+      
+        return showLoginPage
+            ? LoginPage(togglePage: togglePage)
+            : RegisterPage(togglePage: togglePage);
+      },
     );
   }
 }

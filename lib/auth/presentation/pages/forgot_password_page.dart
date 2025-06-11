@@ -107,6 +107,21 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               ),
             ),
           ),
+
+          const SizedBox(height: 10),
+
+          // Button to navigate back to login page
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: Text(
+              "Back to Login",
+              style: GoogleFonts.ubuntu(
+                fontSize: 16,
+              ),
+            ),
+          ),
         ],
       ),
 
