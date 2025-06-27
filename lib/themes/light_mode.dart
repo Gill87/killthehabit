@@ -71,7 +71,7 @@ ThemeData lightMode() {
     ),
 
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.white70,
       selectedItemColor: Color(0xFF3A86FF),
       unselectedItemColor: Color(0xFF999999),
       selectedLabelStyle: TextStyle(fontWeight: FontWeight.bold),
