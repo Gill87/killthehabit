@@ -32,8 +32,36 @@ class HomePage extends StatelessWidget {
           ),
         ],
       ),
-      body: const Center(
-        child: Text('Build Awesome-Sauce Habits!'),
+      body: Center(
+        child: Text(
+          'Build Awesome-Sauce Habits!',
+          style: GoogleFonts.ubuntu(fontSize: 24),
+        ),
+      ),
+
+      bottomNavigationBar: BottomNavigationBar(
+        showUnselectedLabels: true,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Dashboard',
+          ),
+
+          BottomNavigationBarItem(
+            icon: Icon(Icons.bar_chart),
+            label: 'Progress',
+          ),
+
+          BottomNavigationBarItem(
+            icon: Icon(Icons.notifications),
+            label: 'Notifications',
+          ),
+
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
+        ],
       ),
     );
   }

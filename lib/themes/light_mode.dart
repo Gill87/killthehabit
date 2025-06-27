@@ -6,7 +6,7 @@ ThemeData lightMode() {
     primaryColor: const Color(0xFF3A86FF), // Bold blue for actions
     scaffoldBackgroundColor: const Color(0xFFF5F7FA), // Very light grey
     appBarTheme: const AppBarTheme(
-      backgroundColor: Colors.white,
+      backgroundColor: Color.fromARGB(255, 220, 217, 217), // Soft amber for app bar
       elevation: 1,
       iconTheme: IconThemeData(color: Color(0xFF3A3A3A)),
       titleTextStyle: TextStyle(
@@ -68,6 +68,14 @@ ThemeData lightMode() {
     floatingActionButtonTheme: const FloatingActionButtonThemeData(
       backgroundColor: Color(0xFFFF006E),
       foregroundColor: Colors.white,
+    ),
+
+    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+      backgroundColor: Colors.white,
+      selectedItemColor: Color(0xFF3A86FF),
+      unselectedItemColor: Color(0xFF999999),
+      selectedLabelStyle: TextStyle(fontWeight: FontWeight.bold),
+      unselectedLabelStyle: TextStyle(color: Color(0xFF999999)),
     ),
 
     dividerColor: const Color(0xFFE0E0E0),
