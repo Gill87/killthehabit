@@ -57,7 +57,7 @@ ThemeData lightMode() {
       hintStyle: const TextStyle(color: Color(0xFF999999)),
     ),
 
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: Colors.white,
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

@@ -47,17 +47,17 @@ class HomePage extends StatelessWidget {
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ElevatedButton(
-              onPressed: () => getIosScreenTime(),
-              child: const Text('Get iOS Screen Time'),
-            ),
+children: [
+  Text(
+    'Build Awesome-Sauce Habits!',
+    style: GoogleFonts.ubuntu(fontSize: 24),
+  ),
 
-            ElevatedButton(
-              onPressed: () => getAndroidScreenTime(),
-              child: const Text('Get Android Screen Time'),
-            ),
-          ],
+  IconButton(
+    onPressed: () {},
+    icon: const Icon(Icons.add, size: 30),
+  )
+],
         ),
       ),
 
@@ -75,8 +75,13 @@ class HomePage extends StatelessWidget {
           ),
 
           BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: 'Notifications',
+            icon: Icon(Icons.android),
+            label: 'AI',
+          ),
+          
+          BottomNavigationBarItem(
+            icon: Icon(Icons.people),
+            label: 'Friends',
           ),
 
           BottomNavigationBarItem(
