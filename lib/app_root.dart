@@ -33,7 +33,7 @@ class _AppRootState extends State<AppRoot> {
     return BlocConsumer <AuthCubit, AuthState>(
       builder: (context, state) {
         if (_showSplashScreen) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return const Scaffold(body: Center(child: Text("Kill the Habit")));
         }
 
         // Check the current state of authentication
@@ -43,7 +43,11 @@ class _AppRootState extends State<AppRoot> {
         } else if (state is Unauthenticated) {
           print("Current state: $state");
           return const AuthPage();
-        } else {
+        } else if(state is AuthInitial){
+          print("Current state: $state");
+          return const AuthPage();
+        }
+        else {
           print("Current state: $state");
           return const LoadingScreen();
         } 

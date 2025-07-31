@@ -7,6 +7,14 @@ class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
 
+  void getIosScreenTime() {
+    // Implement iOS screen time retrieval logic
+  }
+
+  void getAndroidScreenTime() {
+    // Implement Android screen time retrieval logic
+  }
+
   @override
   Widget build(BuildContext context) {
     
@@ -17,6 +25,8 @@ class HomePage extends StatelessWidget {
     }
 
     return Scaffold(
+
+      // Start App Bar
       appBar: AppBar(
         title: Text(
           'Kill the Habit',
@@ -32,10 +42,22 @@ class HomePage extends StatelessWidget {
           ),
         ],
       ),
+      // End App Bar
+
       body: Center(
-        child: Text(
-          'Build Awesome-Sauce Habits!',
-          style: GoogleFonts.ubuntu(fontSize: 24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton(
+              onPressed: () => getIosScreenTime(),
+              child: const Text('Get iOS Screen Time'),
+            ),
+
+            ElevatedButton(
+              onPressed: () => getAndroidScreenTime(),
+              child: const Text('Get Android Screen Time'),
+            ),
+          ],
         ),
       ),
 
