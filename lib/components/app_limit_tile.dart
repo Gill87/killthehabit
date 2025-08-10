@@ -1,0 +1,118 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:rehabit/services/android_screen_time_service.dart';
+
+class AppLimitTile extends StatefulWidget {
+  final String packageName;
+  final int limitMinutes;
+  final VoidCallback onDelete;
+
+  const AppLimitTile({
+    super.key,
+    required this.packageName,
+    required this.limitMinutes,
+    required this.onDelete,
+  });
+
+  @override
+  State<AppLimitTile> createState() => _AppLimitTileState();
+}
+
+class _AppLimitTileState extends State<AppLimitTile> {
+  
+  int usedMinutes = 0;
+
+  String _formatLimit(int minutes) {
+    if (minutes < 60) {
+      return '$minutes min';
+    } else {
+      final hrs = minutes ~/ 60;
+      final mins = minutes % 60;
+      if (mins == 0) return '$hrs hr${hrs > 1 ? 's' : ''}';
+      return '$hrs hr${hrs > 1 ? 's' : ''} $mins min';
+    }
+  }
+
+  void getUsedMinutes() async {
+    usedMinutes = await AndroidScreenTimeService.getAppScreenTime(widget.packageName);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getUsedMinutes();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final double progress = widget.limitMinutes > 0
+        ? (usedMinutes / widget.limitMinutes).clamp(0.0, 1.0)
+        : 0.0;
+
+    return Slidable(
+      key: ValueKey(widget.packageName),
+      endActionPane: ActionPane(
+        motion: const ScrollMotion(),
+        extentRatio: 0.25,
+        children: [
+          SlidableAction(
+            onPressed: (_) => widget.onDelete(),
+            backgroundColor: Colors.redAccent,
+            foregroundColor: Colors.white,
+            icon: Icons.delete,
+            label: 'Delete',
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ],
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
+          children: [
+            Expanded(
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: CircleAvatar(
+                  backgroundColor: Colors.blueAccent,
+                  child: Text(
+                    widget.packageName.isNotEmpty
+                        ? (AndroidScreenTimeService.getFriendlyAppName(widget.packageName))[0]
+                        : '?',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+                title: Text(
+                  AndroidScreenTimeService.getFriendlyAppName(widget.packageName), // Replace with friendly app name if needed
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text('Limit: ${_formatLimit(widget.limitMinutes)}'),
+              ),
+            ),
+            SizedBox(
+              width: 100, // fixed width for right side progress bar
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  LinearProgressIndicator(
+                    minHeight: 20,
+                    borderRadius: BorderRadius.circular(8),
+                    value: progress,
+                    backgroundColor: Colors.grey[300],
+                    color: progress >= 1.0
+                        ? Colors.redAccent
+                        : Colors.blueAccent,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${usedMinutes}m / ${widget.limitMinutes}m',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

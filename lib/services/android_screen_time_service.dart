@@ -49,6 +49,16 @@ class AndroidScreenTimeService {
     }
   }
 
+  static Future<int> getAppScreenTime(String packageName) async {
+    try {
+      final int result = await platform.invokeMethod('getAppScreenTime', {'packageName': packageName});
+      return result;
+    } catch (e) {
+      print("Error getting app screen time: $e");
+      return 0;
+    }
+  }
+
   // Helper method to format time
   static String formatTime(int milliseconds) {
     final minutes = milliseconds ~/ (1000 * 60);

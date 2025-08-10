@@ -1,8 +1,15 @@
+import 'dart:io';
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:rehabit/auth/domain/entities/app_user.dart';
 import 'package:rehabit/auth/presentation/cubits/auth_cubit.dart';
+import 'package:rehabit/components/app_limit_tile.dart';
+import 'package:rehabit/database/app_limit_database.dart';
 import 'package:rehabit/services/android_screen_time_service.dart';
 
 class HomePage extends StatefulWidget {
@@ -16,20 +23,154 @@ class _HomePageState extends State<HomePage> {
   List<Map<String, dynamic>> appUsageData = [];
   int totalScreenTime = 0; // in milliseconds
   bool isLoading = false;
+  bool isAndroid = Platform.isAndroid;
+
+  final _myBox = Hive.box("mybox");
+  AppLimitDatabase db = AppLimitDatabase();
 
   @override
   void initState() {
     super.initState();
-    _loadScreenTimeData();
+
+    // If first time opening app, then create default data
+    if(_myBox.get("APPLIMITS") == null){
+      db.createInitialData();
+    } else {
+      db.loadData();
+    }
+
+    if (isAndroid) {
+      _androidLoadScreenTimeData();
+    }
   }
 
-  // Function to handle logout
-  void logout() {
-    AuthCubit authCubit = context.read<AuthCubit>();
-    authCubit.logout();
-  }
+// Function to handle logout
+void logout() {
+  AuthCubit authCubit = context.read<AuthCubit>();
+  authCubit.logout();
+}
 
-  Future<void> _loadScreenTimeData() async {
+void createNewLimit() {
+  // Debug print to see what's happening
+  print("createNewLimit called");
+  print("appUsageData length: ${appUsageData.length}");
+  
+  // Don't return early - show dialog even if no apps
+  String? selectedPackage = appUsageData.isNotEmpty ? appUsageData.first['packageName'] : null;
+  Duration selectedDuration = const Duration(hours: 1);
+
+  showDialog(
+    context: context,
+    builder: (context) {
+      return StatefulBuilder(builder: (context, dialogSetState) {
+        return Dialog(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Title
+                Text(
+                  'Set App Time Limit',
+                  style: GoogleFonts.ubuntu(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                
+                // Dropdown to pick app
+                appUsageData.isEmpty 
+                  ? Text(
+                      "No apps found. Please refresh screen time data first.",
+                      style: TextStyle(color: Colors.grey[600]),
+                    )
+                  : DropdownButton<String>(
+                      value: selectedPackage,
+                      isExpanded: true,
+                      items: appUsageData.map((app) {
+                        String pkg = app['packageName'];
+                        String friendlyName = AndroidScreenTimeService.getFriendlyAppName(pkg);
+                        return DropdownMenuItem(
+                          value: pkg,
+                          child: Text(friendlyName),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        dialogSetState(() {
+                          selectedPackage = value;
+                        });
+                      },
+                    ),
+                const SizedBox(height: 20),
+
+                // Time picker
+                Container(
+                  height: 200,
+                  child: CupertinoTimerPicker(
+                    mode: CupertinoTimerPickerMode.hm,
+                    initialTimerDuration: selectedDuration,
+                    onTimerDurationChanged: (Duration newDuration) {
+                      dialogSetState(() {
+                        selectedDuration = newDuration;
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Buttons
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    TextButton(
+                      child: Text('Cancel', style: GoogleFonts.ubuntu()),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                    ElevatedButton(
+                      child: Text('Save', style: GoogleFonts.ubuntu()),
+                      onPressed: () async {
+                        if (selectedPackage == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Please select an app first')),
+                          );
+                          return;
+                        }
+                        
+                        int totalMillis = selectedDuration.inMilliseconds;
+
+                        if (totalMillis == 0) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Please set a non-zero time limit')),
+                          );
+                          return;
+                        }
+
+                        await db.saveLimit(selectedPackage!, totalMillis);
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Limit set for ${AndroidScreenTimeService.getFriendlyAppName(selectedPackage!)}')),
+                        );
+                        Navigator.of(context).pop();
+                        _refreshData();
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      });
+    },
+  );
+}
+
+
+  // Get Screen Time Data for Android
+  Future<void> _androidLoadScreenTimeData() async {
+
+    // Only for Android
     setState(() {
       isLoading = true;
     });
@@ -55,10 +196,14 @@ class _HomePageState extends State<HomePage> {
         isLoading = false;
       });
     }
+    
   }
 
+  // Refresh Screen Time Data for Android
   Future<void> _refreshData() async {
-    await _loadScreenTimeData();
+    if (isAndroid) {
+      await _androidLoadScreenTimeData();
+    }
   }
 
   AppUser getUser() {
@@ -264,7 +409,7 @@ class _HomePageState extends State<HomePage> {
                                     ],
                                   ),
                                 );
-                              }).toList(),
+                              }),
                           ],
                         ),
                       ),
@@ -303,10 +448,24 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
 
-
-
-                
-
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: db.appLimits.length,
+                  itemBuilder: (context, index) {
+                    final limit = db.appLimits[index];
+                    return AppLimitTile(
+                      packageName: limit[0],
+                      limitMinutes: limit[1],
+                      onDelete: () {
+                        setState(() {
+                          db.appLimits.removeAt(index);
+                          db.updateDatabase();
+                        });
+                      },
+                    );
+                  },
+                ),
                 const SizedBox(height: 100), // Space for bottom nav
               ],
             ),
@@ -317,10 +476,7 @@ class _HomePageState extends State<HomePage> {
       // Floating Action Button
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.blue,
-        onPressed: () {
-          // Action for FAB, e.g., navigate to a new screen
-          
-        },
+        onPressed: createNewLimit,
         child: const Icon(Icons.add, color: Colors.white,),
       ),
 
@@ -343,40 +499,6 @@ class _HomePageState extends State<HomePage> {
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
             label: 'Settings',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: GoogleFonts.ubuntu(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: GoogleFonts.ubuntu(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),
