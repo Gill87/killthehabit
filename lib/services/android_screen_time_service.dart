@@ -109,6 +109,10 @@ class AndroidScreenTimeService {
         return 'Phone';
       case 'com.sec.android.gallery3d':
         return 'Gallery';
+      case 'com.samsung.android.forest':
+        return 'Digital Wellbeing';
+      case 'com.openai.chatgpt':
+        return 'ChatGPT';
       // Add more mappings as needed
       default:
         // Extract app name from package (last part after final dot)

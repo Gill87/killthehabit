@@ -85,15 +85,29 @@ void createNewLimit() {
                       "No apps found. Please refresh screen time data first.",
                       style: TextStyle(color: Colors.grey[600]),
                     )
-                  : DropdownButton<String>(
+                  : DropdownButtonFormField<String>(
                       value: selectedPackage,
                       isExpanded: true,
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.grey[100],
+                        contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      dropdownColor: Colors.white,
                       items: appUsageData.map((app) {
                         String pkg = app['packageName'];
                         String friendlyName = AndroidScreenTimeService.getFriendlyAppName(pkg);
                         return DropdownMenuItem(
                           value: pkg,
-                          child: Text(friendlyName),
+                          child: Text(
+                            friendlyName,
+                            style: GoogleFonts.ubuntu(fontSize: 16),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         );
                       }).toList(),
                       onChanged: (value) {
@@ -102,6 +116,8 @@ void createNewLimit() {
                         });
                       },
                     ),
+
+
                 const SizedBox(height: 20),
 
                 // Time picker
@@ -304,7 +320,7 @@ void createNewLimit() {
                               ),
                             const SizedBox(height: 8),
                             Text(
-                              'Last 24 hours',
+                              'Today',
                               style: GoogleFonts.ubuntu(
                                 fontSize: 12,
                                 color: Colors.white.withOpacity(0.8),

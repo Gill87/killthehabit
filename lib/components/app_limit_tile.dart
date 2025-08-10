@@ -60,7 +60,6 @@ class _AppLimitTileState extends State<AppLimitTile> {
             backgroundColor: Colors.redAccent,
             foregroundColor: Colors.white,
             icon: Icons.delete,
-            label: 'Delete',
             borderRadius: BorderRadius.circular(8),
           ),
         ],
