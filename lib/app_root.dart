@@ -7,7 +7,7 @@ import 'package:rehabit/auth/presentation/cubits/auth_cubit.dart';
 import 'package:rehabit/auth/presentation/cubits/auth_state.dart';
 import 'package:rehabit/auth/presentation/pages/auth_page.dart';
 import 'package:rehabit/components/loading_screen.dart';
-import 'package:rehabit/home_page.dart';
+import 'package:rehabit/pages/base_page.dart';
 import 'package:rehabit/splash_screen.dart';
 import 'package:rehabit/services/android_screen_time_service.dart';
 
@@ -136,7 +136,7 @@ class _AppRootState extends State<AppRoot> {
         // Check the current state of authentication
         if (state is Authenticated) {
           print("Current state: $state");
-          return const HomePage();
+          return const BasePage();
         } else if (state is Unauthenticated) {
           print("Current state: $state");
           // Reset permission dialog flag when user logs out

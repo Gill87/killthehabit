@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -11,6 +10,7 @@ import 'package:rehabit/auth/presentation/cubits/auth_cubit.dart';
 import 'package:rehabit/components/app_limit_tile.dart';
 import 'package:rehabit/database/app_limit_database.dart';
 import 'package:rehabit/services/android_screen_time_service.dart';
+import 'package:rehabit/services/notification_permissions.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -32,6 +32,8 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
 
+    requestNotificationPermission();
+
     // If first time opening app, then create default data
     if(_myBox.get("APPLIMITS") == null){
       db.createInitialData();
@@ -44,143 +46,152 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-// Function to handle logout
-void logout() {
-  AuthCubit authCubit = context.read<AuthCubit>();
-  authCubit.logout();
-}
+  void requestNotificationPermission() async {
+    bool hasNotificationPermission = await NotificationPermissions.checkNotificationPermission();
 
-void createNewLimit() {
-  // Debug print to see what's happening
-  print("createNewLimit called");
-  print("appUsageData length: ${appUsageData.length}");
-  
-  // Don't return early - show dialog even if no apps
-  String? selectedPackage = appUsageData.isNotEmpty ? appUsageData.first['packageName'] : null;
-  Duration selectedDuration = const Duration(hours: 1);
+    if(!hasNotificationPermission) {
+      await NotificationPermissions.requestNotificationPermission(context);
+      hasNotificationPermission = await NotificationPermissions.checkNotificationPermission();
+    }
+  }
 
-  showDialog(
-    context: context,
-    builder: (context) {
-      return StatefulBuilder(builder: (context, dialogSetState) {
-        return Dialog(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Title
-                Text(
-                  'Set App Time Limit',
-                  style: GoogleFonts.ubuntu(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
+  // Function to handle logout
+  void logout() {
+    AuthCubit authCubit = context.read<AuthCubit>();
+    authCubit.logout();
+  }
+
+  void createNewLimit() {
+    // Debug print to see what's happening
+    print("createNewLimit called");
+    print("appUsageData length: ${appUsageData.length}");
+    
+    // Don't return early - show dialog even if no apps
+    String? selectedPackage = appUsageData.isNotEmpty ? appUsageData.first['packageName'] : null;
+    Duration selectedDuration = const Duration(hours: 1);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(builder: (context, dialogSetState) {
+          return Dialog(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Title
+                  Text(
+                    'Set App Time Limit',
+                    style: GoogleFonts.ubuntu(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                
-                // Dropdown to pick app
-                appUsageData.isEmpty 
-                  ? Text(
-                      "No apps found. Please refresh screen time data first.",
-                      style: TextStyle(color: Colors.grey[600]),
-                    )
-                  : DropdownButtonFormField<String>(
-                      value: selectedPackage,
-                      isExpanded: true,
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: Colors.grey[100],
-                        contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                      dropdownColor: Colors.white,
-                      items: appUsageData.map((app) {
-                        String pkg = app['packageName'];
-                        String friendlyName = AndroidScreenTimeService.getFriendlyAppName(pkg);
-                        return DropdownMenuItem(
-                          value: pkg,
-                          child: Text(
-                            friendlyName,
-                            style: GoogleFonts.ubuntu(fontSize: 16),
-                            overflow: TextOverflow.ellipsis,
+                  const SizedBox(height: 20),
+                  
+                  // Dropdown to pick app
+                  appUsageData.isEmpty 
+                    ? Text(
+                        "No apps found. Please refresh screen time data first.",
+                        style: TextStyle(color: Colors.grey[600]),
+                      )
+                    : DropdownButtonFormField<String>(
+                        value: selectedPackage,
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.grey[100],
+                          contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
                           ),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
+                        ),
+                        dropdownColor: Colors.white,
+                        items: appUsageData.map((app) {
+                          String pkg = app['packageName'];
+                          String friendlyName = AndroidScreenTimeService.getFriendlyAppName(pkg);
+                          return DropdownMenuItem(
+                            value: pkg,
+                            child: Text(
+                              friendlyName,
+                              style: GoogleFonts.ubuntu(fontSize: 16, color: Colors.black),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          dialogSetState(() {
+                            selectedPackage = value;
+                          });
+                        },
+                      ),
+
+
+                  const SizedBox(height: 20),
+
+                  // Time picker
+                  Container(
+                    height: 200,
+                    child: CupertinoTimerPicker(
+                      mode: CupertinoTimerPickerMode.hm,
+                      initialTimerDuration: selectedDuration,
+                      onTimerDurationChanged: (Duration newDuration) {
                         dialogSetState(() {
-                          selectedPackage = value;
+                          selectedDuration = newDuration;
                         });
                       },
                     ),
-
-
-                const SizedBox(height: 20),
-
-                // Time picker
-                Container(
-                  height: 200,
-                  child: CupertinoTimerPicker(
-                    mode: CupertinoTimerPickerMode.hm,
-                    initialTimerDuration: selectedDuration,
-                    onTimerDurationChanged: (Duration newDuration) {
-                      dialogSetState(() {
-                        selectedDuration = newDuration;
-                      });
-                    },
                   ),
-                ),
-                const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-                // Buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    TextButton(
-                      child: Text('Cancel', style: GoogleFonts.ubuntu()),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                    ElevatedButton(
-                      child: Text('Save', style: GoogleFonts.ubuntu()),
-                      onPressed: () async {
-                        if (selectedPackage == null) {
+                  // Buttons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      TextButton(
+                        child: Text('Cancel', style: GoogleFonts.ubuntu()),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                      ElevatedButton(
+                        child: Text('Save', style: GoogleFonts.ubuntu()),
+                        onPressed: () async {
+                          if (selectedPackage == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Please select an app first')),
+                            );
+                            return;
+                          }
+                          
+                          int totalMillis = selectedDuration.inMilliseconds;
+
+                          if (totalMillis == 0) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Please set a non-zero time limit')),
+                            );
+                            return;
+                          }
+
+                          await db.saveLimit(selectedPackage!, totalMillis);
+
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Please select an app first')),
+                            SnackBar(content: Text('Limit set for ${AndroidScreenTimeService.getFriendlyAppName(selectedPackage!)}')),
                           );
-                          return;
-                        }
-                        
-                        int totalMillis = selectedDuration.inMilliseconds;
-
-                        if (totalMillis == 0) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Please set a non-zero time limit')),
-                          );
-                          return;
-                        }
-
-                        await db.saveLimit(selectedPackage!, totalMillis);
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Limit set for ${AndroidScreenTimeService.getFriendlyAppName(selectedPackage!)}')),
-                        );
-                        Navigator.of(context).pop();
-                        _refreshData();
-                      },
-                    ),
-                  ],
-                ),
-              ],
+                          Navigator.of(context).pop();
+                          _refreshData();
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        );
-      });
-    },
-  );
-}
+          );
+        });
+      },
+    );
+  }
 
 
   // Get Screen Time Data for Android
@@ -231,26 +242,6 @@ void createNewLimit() {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Start App Bar
-      appBar: AppBar(
-        title: Text(
-          'Kill the Habit',
-          style: GoogleFonts.ubuntu(fontSize: 24),
-        ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: isLoading ? null : _refreshData,
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => logout(),
-          ),
-        ],
-      ),
-      // End App Bar
-
       body: RefreshIndicator(
         onRefresh: _refreshData,
         child: SingleChildScrollView(
@@ -496,28 +487,6 @@ void createNewLimit() {
         child: const Icon(Icons.add, color: Colors.white,),
       ),
 
-      bottomNavigationBar: BottomNavigationBar(
-        showUnselectedLabels: true,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart),
-            label: 'Progress',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: 'Notifications',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
-        ],
-      ),
     );
   }
 }
