@@ -9,7 +9,6 @@ import 'package:rehabit/auth/domain/entities/app_user.dart';
 import 'package:rehabit/auth/presentation/cubits/auth_cubit.dart';
 import 'package:rehabit/components/app_limit_tile.dart';
 import 'package:rehabit/database/app_limit_database.dart';
-import 'package:rehabit/database/app_usage_database.dart';
 import 'package:rehabit/services/android_screen_time_service.dart';
 import 'package:rehabit/services/notification_permissions.dart';
 import 'package:rehabit/services/notification_service.dart';
@@ -29,15 +28,14 @@ class _HomePageState extends State<HomePage>  {
 
   final _myBox = Hive.box("mybox");
   AppLimitDatabase db = AppLimitDatabase();
-  AppUsageDatabase usageDb = AppUsageDatabase(); // Add usage database
 
 
   @override
   void initState() {
     super.initState();
 
+    _initializeNotificationServices();
     requestNotificationPermission();
-    _initializeServices();
 
     // Initialize databases
     if(_myBox.get("APPLIMITS") == null){
@@ -46,15 +44,12 @@ class _HomePageState extends State<HomePage>  {
       db.loadData();
     }
 
-    // Initialize usage database
-    usageDb.loadData();
-
     if (isAndroid) {
       _androidLoadScreenTimeData();
     }
   }
 
-  Future<void> _initializeServices() async {
+  Future<void> _initializeNotificationServices() async {
     await NotificationService().initNotifications();
   }
 
@@ -64,58 +59,14 @@ class _HomePageState extends State<HomePage>  {
     if(!hasNotificationPermission) {
       await NotificationPermissions.requestNotificationPermission(context);
       hasNotificationPermission = await NotificationPermissions.checkNotificationPermission();
+    } else {
+      // Permission already granted so display test notification
+      NotificationService().showNotification(
+        title: "Test Notification",
+        body: "This is a test notification to check if everything is working.",
+      );
     }
   } 
-
-  // NEW METHOD: Check for usage warnings and send notifications
-  Future<void> _checkUsageWarnings() async {
-    List<Map<String, dynamic>> appsNeedingWarning = usageDb.getAppsNeedingWarning(db.appLimits);
-    
-    for (var appWarning in appsNeedingWarning) {
-      String packageName = appWarning['packageName'];
-      int limitMinutes = appWarning['limitMinutes'];
-      double usagePercentage = appWarning['usagePercentage'];
-      int todayUsageMillis = appWarning['todayUsageMillis'];
-      int todayUsageMinutes = (todayUsageMillis / (1000 * 60)).round();
-      
-      // Send 80% warning notification
-      await NotificationService().showUsageWarningNotification(
-        packageName: packageName,
-        usagePercentage: usagePercentage,
-        limitMinutes: limitMinutes,
-        todayUsageMinutes: todayUsageMinutes,
-      );
-      
-      // Mark notification as sent
-      await usageDb.markNotificationSent(packageName);
-      
-      print('Warning notification sent for $packageName: ${usagePercentage.toInt()}%');
-    }
-  }
-
-  // NEW METHOD: Check for exceeded limits and send notifications
-  Future<void> _checkExceededLimits() async {
-    for (var limit in db.appLimits) {
-      String packageName = limit[0];
-      int limitMinutes = limit[1];
-      
-      double usagePercentage = usageDb.getUsagePercentage(packageName, limitMinutes);
-      
-      if (usagePercentage >= 100.0) {
-        int todayUsageMillis = usageDb.getTodayUsage(packageName);
-        int todayUsageMinutes = (todayUsageMillis / (1000 * 60)).round();
-        
-        // Send limit exceeded notification
-        await NotificationService().showLimitExceededNotification(
-          packageName: packageName,
-          limitMinutes: limitMinutes,
-          todayUsageMinutes: todayUsageMinutes,
-        );
-        
-        print('Limit exceeded notification sent for $packageName: ${usagePercentage.toInt()}%');
-      }
-    }
-  }
 
   // Function to handle logout
   void logout() {
@@ -126,7 +77,6 @@ class _HomePageState extends State<HomePage>  {
   void createNewLimit() {
     // Debug print to see what's happening
     print("createNewLimit called");
-    print("appUsageData length: ${appUsageData.length}");
     
     // Don't return early - show dialog even if no apps
     String? selectedPackage = appUsageData.isNotEmpty ? appUsageData.first['packageName'] : null;
@@ -269,21 +219,11 @@ class _HomePageState extends State<HomePage>  {
       // Get individual app usage
       List<Map<String, dynamic>> appData = await AndroidScreenTimeService.getUsageStats();
 
-      // Save app usage data to database
-      for (var app in appData) {
-        String packageName = app['packageName'];
-        int usageTime = app['totalTimeInForeground'];
-        await usageDb.saveAppUsage(packageName, usageTime);
-      }
-
-      // Check for usage warnings and exceeded limits
-      await _checkUsageWarnings();
-      await _checkExceededLimits();
-
       setState(() {
         totalScreenTime = total;
         appUsageData = appData;
       });
+
     } catch (e) {
       print("Error loading screen time data: $e");
       ScaffoldMessenger.of(context).showSnackBar(
@@ -374,7 +314,7 @@ class _HomePageState extends State<HomePage>  {
                               Text(
                                 AndroidScreenTimeService.formatTime(totalScreenTime),
                                 style: GoogleFonts.ubuntu(
-                                  fontSize: 36,
+                                  fontSize: 32,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
                                 ),
