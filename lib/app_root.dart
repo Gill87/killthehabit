@@ -8,6 +8,7 @@ import 'package:rehabit/auth/presentation/cubits/auth_state.dart';
 import 'package:rehabit/auth/presentation/pages/auth_page.dart';
 import 'package:rehabit/components/loading_screen.dart';
 import 'package:rehabit/pages/base_page.dart';
+import 'package:rehabit/services/usage_monitoring_service.dart';
 import 'package:rehabit/splash_screen.dart';
 import 'package:rehabit/services/android_screen_time_service.dart';
 
@@ -18,13 +19,17 @@ class AppRoot extends StatefulWidget {
   State<AppRoot> createState() => _AppRootState();
 }
 
-class _AppRootState extends State<AppRoot> {
+class _AppRootState extends State<AppRoot> with WidgetsBindingObserver{
   bool _showSplashScreen = true;
   bool _hasShownPermissionDialog = false; // Track if we've shown the dialog
+  final UsageMonitoringService _monitoringService = UsageMonitoringService();
 
   @override
   void initState() {
     super.initState();
+
+    WidgetsBinding.instance.addObserver(this);
+    initializeApp();
 
     // Show Splash Screen for 2 seconds
     Future.delayed(const Duration(seconds: 2), () {
@@ -34,6 +39,38 @@ class _AppRootState extends State<AppRoot> {
         });
       }
     });
+  }
+
+  Future <void> initializeApp() async {
+    await _monitoringService.startMonitoring();
+    _monitoringService.scheduleDailySummary();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    switch (state) {
+      case AppLifecycleState.resumed:
+        _monitoringService.startMonitoring();
+        break;
+      case AppLifecycleState.paused:
+        break;
+      case AppLifecycleState.inactive:
+        break;
+      case AppLifecycleState.detached:
+        _monitoringService.stopMonitoring();
+        break;
+      case AppLifecycleState.hidden:
+        // TODO: Handle this case.
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _monitoringService.dispose();
+    super.dispose();
   }
 
   void _showPermissionDialog() {
