@@ -5,6 +5,7 @@ import 'package:rehabit/services/android_screen_time_service.dart';
 class AppLimitTile extends StatefulWidget {
   final String packageName;
   final int limitMinutes;
+  final int usedMinutes;
   final VoidCallback onDelete;
 
   const AppLimitTile({
@@ -12,6 +13,7 @@ class AppLimitTile extends StatefulWidget {
     required this.packageName,
     required this.limitMinutes,
     required this.onDelete,
+    required this.usedMinutes,
   });
 
   @override
@@ -20,8 +22,6 @@ class AppLimitTile extends StatefulWidget {
 
 class _AppLimitTileState extends State<AppLimitTile> {
   
-  int usedMinutes = 0;
-
   String _formatLimit(int minutes) {
     if (minutes < 60) {
       return '$minutes min';
@@ -33,20 +33,10 @@ class _AppLimitTileState extends State<AppLimitTile> {
     }
   }
 
-  void getUsedMinutes() async {
-    usedMinutes = await AndroidScreenTimeService.getAppScreenTime(widget.packageName);
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    getUsedMinutes();
-  }
-
   @override
   Widget build(BuildContext context) {
     final double progress = widget.limitMinutes > 0
-        ? (usedMinutes / widget.limitMinutes).clamp(0.0, 1.0)
+        ? (widget.usedMinutes / widget.limitMinutes).clamp(0.0, 1.0)
         : 0.0;
 
     return Slidable(
@@ -103,7 +93,7 @@ class _AppLimitTileState extends State<AppLimitTile> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${usedMinutes}m / ${widget.limitMinutes}m',
+                    '${widget.usedMinutes}m / ${widget.limitMinutes}m',
                     style: const TextStyle(fontSize: 12),
                   ),
                 ],

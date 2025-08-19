@@ -8,6 +8,9 @@ import 'package:rehabit/auth/presentation/cubits/auth_state.dart';
 import 'package:rehabit/auth/presentation/pages/auth_page.dart';
 import 'package:rehabit/components/loading_screen.dart';
 import 'package:rehabit/pages/base_page.dart';
+import 'package:rehabit/services/foreground_service.dart';
+import 'package:rehabit/services/notification_permissions.dart';
+import 'package:rehabit/services/overlay_permission.dart';
 import 'package:rehabit/splash_screen.dart';
 import 'package:rehabit/services/android_screen_time_service.dart';
 
@@ -20,12 +23,11 @@ class AppRoot extends StatefulWidget {
 
 class _AppRootState extends State<AppRoot> {
   bool _showSplashScreen = true;
-  bool _hasShownPermissionDialog = false; // Track if we've shown the dialog
+  bool _hasShownScreenTimePermissionDialog = false; // Track if we've shown the dialog
 
   @override
   void initState() {
     super.initState();
-
 
     // Show Splash Screen for 2 seconds
     Future.delayed(const Duration(seconds: 2), () {
@@ -35,15 +37,24 @@ class _AppRootState extends State<AppRoot> {
         });
       }
     });
+
+    // TEST CALL
+    startForegroundService();
+  }
+
+  // TEST FUNCTION
+  Future<void> startForegroundService() async {
+    await ForegroundService.startService();
   }
 
 
-  void _showPermissionDialog() {
-    if (_hasShownPermissionDialog) return; // Prevent showing multiple times
+  // TEST FUNCTION
+  Future<void> _showScreenTimePermissionDialog() async {
+    if (_hasShownScreenTimePermissionDialog) return; // Prevent showing multiple times
     
-    _hasShownPermissionDialog = true;
+    _hasShownScreenTimePermissionDialog = true;
     
-    showDialog(
+    await showDialog(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext dialogContext) {
@@ -80,12 +91,6 @@ class _AppRootState extends State<AppRoot> {
             ],
           ),
           actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-              },
-              child: const Text('Skip for Now'),
-            ),
             ElevatedButton(
               onPressed: () async {
                 Navigator.of(dialogContext).pop();
@@ -111,16 +116,37 @@ class _AppRootState extends State<AppRoot> {
           
           // Small delay to ensure UI is ready
           await Future.delayed(const Duration(milliseconds: 300));
-          
+
+
+          // ---------------TEST CODE START----------------------------
           if (mounted) {
-            bool hasPermission = await AndroidScreenTimeService.hasPermission();
-            print("🔍 DEBUG: Has permission: $hasPermission");
+            bool hasScreenTimePermission = await AndroidScreenTimeService.hasPermission();
+            bool hasNotificationPermission = await NotificationPermissions.checkNotificationPermission();
+            bool hasOverlayPermission = await OverlayPermission.hasOverlayPermission();
+
+            print("🔍 DEBUG: Has Screen Time Permission: $hasScreenTimePermission");
             
-            if (!hasPermission && !_hasShownPermissionDialog) {
-              print("🔍 DEBUG: Showing permission dialog");
-              _showPermissionDialog();
+          // 1️⃣ Request screen time permission first
+            if (!hasScreenTimePermission && !_hasShownScreenTimePermissionDialog) {
+              await _showScreenTimePermissionDialog();
+              await Future.delayed(const Duration(seconds: 1)); // wait a bit before next dialog
+            }
+
+            // 2️⃣ Only request overlay if screen time permission is already granted
+            if (!hasOverlayPermission) {
+              print("🔍 DEBUG: Requesting overlay permission");
+              await OverlayPermission.requestOverlayPermission();
+              await Future.delayed(const Duration(seconds: 1));
+            }
+
+            // 3️⃣ Handle notification permission
+            if (!hasNotificationPermission) {
+              print("🔍 DEBUG: Showing notification permission dialog");
+              await NotificationPermissions.requestNotificationPermission(context);
             }
           }
+           // ---------------TEST CODE END----------------------------
+
         }
         
         // Handle auth errors
@@ -142,7 +168,8 @@ class _AppRootState extends State<AppRoot> {
         } else if (state is Unauthenticated) {
           print("Current state: $state");
           // Reset permission dialog flag when user logs out
-          _hasShownPermissionDialog = false;
+          _hasShownScreenTimePermissionDialog = false;
+
           return const AuthPage();
         } else if (state is AuthInitial) {
           print("Current state: $state");

@@ -6,7 +6,7 @@ class NotificationService {
   bool _isInitialized = false;
 
   bool get isInitialized => _isInitialized;
-
+   
 
   // INITIALIZE
   Future<void> initNotifications() async {
