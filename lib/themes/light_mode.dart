@@ -74,7 +74,7 @@ import 'package:google_fonts/google_fonts.dart';
       hintStyle: GoogleFonts.ubuntu(color: const Color(0xFF999999)),
     ),
     
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: Colors.white,
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

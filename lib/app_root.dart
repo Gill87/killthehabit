@@ -38,17 +38,17 @@ class _AppRootState extends State<AppRoot> {
       }
     });
 
-    // TEST CALL
+    // ---------TEST CALL-----------
     startForegroundService();
   }
 
-  // TEST FUNCTION
+  // ------------TEST FUNCTION--------------
   Future<void> startForegroundService() async {
     await ForegroundService.startService();
   }
 
 
-  // TEST FUNCTION
+  // -------------TEST FUNCTION---------------
   Future<void> _showScreenTimePermissionDialog() async {
     if (_hasShownScreenTimePermissionDialog) return; // Prevent showing multiple times
     
